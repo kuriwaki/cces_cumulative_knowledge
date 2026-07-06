@@ -35,6 +35,7 @@ years. Two traps are handled explicitly:
 | `03_media-use.R` | Builds the cumulative **media-use** long file. |
 | `04_political-knowledge.R` | Builds the cumulative **political-knowledge** long file. |
 | `05_correct-answers.R` | Adds correct answers and `is_correct` for federal control and officeholder party-recall items where a source key is available. |
+| `06_eval-ideo.R` | Appends officeholder **evaluation** and **ideological-placement** engagement items (own Senator 1/2, Governor) for 2020 and 2024 to the scored release file. These items have no correct-answer key, so `is_correct` encodes engagement (substantive response vs. "Not sure"). |
 
 ```sh
 Rscript 01_download-cces-dataverse.R
@@ -42,6 +43,7 @@ Rscript 02_codebook.R
 Rscript 03_media-use.R
 Rscript 04_political-knowledge.R
 Rscript 05_correct-answers.R
+Rscript 06_eval-ideo.R
 ```
 
 ## Outputs
@@ -82,6 +84,15 @@ value_raw, label_raw, response`.
 - `knowledge_correct_answer_key.csv` — answer-key rows used for scoring
 - `knowledge_correct_summary.csv` — item-level scored-row counts and mean
   correctness
+
+**Evaluation / ideology outputs** (from script 06):
+
+- Appends `eval_senator1`, `eval_senator2`, `eval_governor`, `ideo_senator1`,
+  `ideo_senator2`, `ideo_governor` for 2020 and 2024 directly into
+  `knowledge_long_2006-2025_scored.feather` (same schema; `is_correct` is
+  `TRUE` for a substantive response, `FALSE` for "Not sure", `NA` if
+  skipped/not asked). The script is idempotent: re-running it drops and
+  rebuilds these six items rather than duplicating rows.
 
 ## Notes
 
