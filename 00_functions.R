@@ -1,5 +1,4 @@
-# Written by Codex
-# Shared helpers for the MEDIAKNOWLEDGE pipeline. Sourced by 03, 04, and 05.
+# Shared helpers for the MEDIAKNOWLEDGE pipeline. Sourced by scripts 03-06.
 # Reads only the columns named in the crosswalk from each YYYY_cc.dta, returns a
 # harmonized long-form tibble (one row per respondent x year x item).
 
@@ -40,7 +39,8 @@ label_mediaknowl_vars <- function(data) {
     response = "Harmonized respondent response",
     correct_response = "Correct harmonized response",
     correct_source = "Source used for correct response",
-    is_correct = "Whether response matches correct response"
+    is_correct = "Whether response matches correct response",
+    is_aware = "Whether respondent offers a substantive awareness response"
   )
 
   for (nm in base::intersect(names(var_labels), names(data))) {

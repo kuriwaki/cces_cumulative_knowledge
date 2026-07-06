@@ -31,11 +31,11 @@ years. Two traps are handled explicitly:
 |---|---|
 | `00_functions.R` | Shared helpers sourced by the build scripts. |
 | `01_download-cces-dataverse.R` | Downloads the CCES common-content files and supporting auxiliary files into `data/source/cces/`. |
-| `02_codebook.R` | Reads **metadata only** (0 rows) from all yearly common-content files, classifies the relevant variables into harmonized items, and writes the crosswalk, value-label inventory, response map, and a human-readable codebook. |
+| `02_codebook.R` | Reads **metadata only** (0 rows) from all yearly common-content files, defines the media-use, political-knowledge, and awareness variable mappings, and writes the crosswalk, value-label inventory, response map, and a human-readable codebook. |
 | `03_media-use.R` | Builds the cumulative **media-use** long file. |
 | `04_political-knowledge.R` | Builds the cumulative **political-knowledge** long file. |
 | `05_correct-answers.R` | Adds correct answers and `is_correct` for federal control and officeholder party-recall items where a source key is available. |
-| `06_eval-ideo.R` | Appends officeholder **evaluation** and **ideological-placement** engagement items (own Senator 1/2, Governor) for 2020 and 2024 to the scored release file. These items have no correct-answer key, so `is_correct` encodes engagement (substantive response vs. "Not sure"). |
+| `06_eval-ideo.R` | Appends officeholder **evaluation** and **ideological-placement** awareness items (own Senator 1/2, Governor) for 2020 and 2024 to the scored release file. `is_aware` distinguishes substantive responses from "Not sure"; `is_correct` remains missing. |
 
 ```sh
 Rscript 01_download-cces-dataverse.R
@@ -89,10 +89,11 @@ value_raw, label_raw, response`.
 
 - Appends `eval_senator1`, `eval_senator2`, `eval_governor`, `ideo_senator1`,
   `ideo_senator2`, `ideo_governor` for 2020 and 2024 directly into
-  `knowledge_long_2006-2025_scored.feather` (same schema; `is_correct` is
-  `TRUE` for a substantive response, `FALSE` for "Not sure", `NA` if
-  skipped/not asked). The script is idempotent: re-running it drops and
-  rebuilds these six items rather than duplicating rows.
+  `knowledge_long_2006-2025_scored.feather`. For these rows, `is_aware` is
+  `TRUE` for a substantive response and `FALSE` for "Not sure", while
+  `is_correct` is `NA`. For all other rows, `is_aware` is `NA`. Skipped and
+  not-asked responses are omitted. The script is idempotent: re-running it
+  drops and rebuilds these six items rather than duplicating rows.
 
 ## Notes
 

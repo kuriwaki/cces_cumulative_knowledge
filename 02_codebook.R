@@ -1,6 +1,5 @@
-# Written by Codex
-# Build a crosswalk / codebook for the CCES common-content MEDIA USE and
-# POLITICAL KNOWLEDGE batteries, 2006-2025.
+# Build a crosswalk / codebook for the CCES common-content MEDIA USE,
+# POLITICAL KNOWLEDGE, and AWARENESS batteries, 2006-2025.
 #
 # This script reads ONLY the metadata (variable labels + value labels) of each
 # data/source/cces/YYYY_cc.dta file, classifies the relevant variables into a
@@ -165,7 +164,29 @@ item_meta <- tribble(
   "recall_governor",      "Knows party of own Governor",                      "party_recall",
   "recall_senator1",      "Knows party of own U.S. Senator 1",                "party_recall",
   "recall_senator2",      "Knows party of own U.S. Senator 2",                "party_recall",
-  "recall_house",          "Knows party of own U.S. House member",             "party_recall"
+  "recall_house",         "Knows party of own U.S. House member",             "party_recall",
+  "eval_senator1",        "Offers an approval evaluation of own U.S. Senator 1", "awareness_eval",
+  "eval_senator2",        "Offers an approval evaluation of own U.S. Senator 2", "awareness_eval",
+  "eval_governor",        "Offers an approval evaluation of own Governor",      "awareness_eval",
+  "ideo_senator1",        "Places own U.S. Senator 1 on an ideological scale",  "awareness_ideo",
+  "ideo_senator2",        "Places own U.S. Senator 2 on an ideological scale",  "awareness_ideo",
+  "ideo_governor",        "Places own Governor on an ideological scale",        "awareness_ideo"
+)
+
+awareness_vars <- tribble(
+  ~year, ~group,      ~item,            ~var_orig,
+  2020L, "awareness", "eval_senator1",  "CC20_320g",
+  2020L, "awareness", "eval_senator2",  "CC20_320h",
+  2020L, "awareness", "eval_governor",  "CC20_320d",
+  2020L, "awareness", "ideo_senator1",  "CC20_340g",
+  2020L, "awareness", "ideo_senator2",  "CC20_340h",
+  2020L, "awareness", "ideo_governor",  "CC20_340b",
+  2024L, "awareness", "eval_senator1",  "CC24_312g",
+  2024L, "awareness", "eval_senator2",  "CC24_312h",
+  2024L, "awareness", "eval_governor",  "CC24_312d",
+  2024L, "awareness", "ideo_senator1",  "CC24_330i",
+  2024L, "awareness", "ideo_senator2",  "CC24_330j",
+  2024L, "awareness", "ideo_governor",  "CC24_330b"
 )
 
 # Harmonize a raw value-label string into a canonical response category ----
@@ -196,7 +217,26 @@ normalize_response <- function(group, label_raw) {
     lab == "don't know"                  ~ "Don't know",
     TRUE ~ NA_character_
   )
-  if_else(group == "knowledge", out_know, out_media)
+  out_awareness <- case_when(
+    lab == "strongly approve"          ~ "Strongly approve",
+    lab == "somewhat approve"          ~ "Somewhat approve",
+    lab == "somewhat disapprove"       ~ "Somewhat disapprove",
+    lab == "strongly disapprove"       ~ "Strongly disapprove",
+    lab == "very liberal"              ~ "Very Liberal",
+    lab == "liberal"                   ~ "Liberal",
+    lab == "somewhat liberal"          ~ "Somewhat Liberal",
+    lab == "middle of the road"        ~ "Middle of the Road",
+    lab == "somewhat conservative"     ~ "Somewhat Conservative",
+    lab == "conservative"              ~ "Conservative",
+    lab == "very conservative"         ~ "Very Conservative",
+    lab == "not sure"                  ~ "Not sure",
+    TRUE ~ NA_character_
+  )
+  case_when(
+    group == "knowledge" ~ out_know,
+    group == "media" ~ out_media,
+    group == "awareness" ~ out_awareness
+  )
 }
 
 # Build metadata, crosswalk, value-label inventory ----
@@ -212,6 +252,14 @@ vallab_all <- map(meta, "vallab") |> list_rbind()
 xwalk <- varlab_all |>
   mutate(classify_item(var_orig, qtext)) |>
   filter(!is.na(group), !is.na(item))
+
+awareness_xwalk <- awareness_vars |>
+  left_join(varlab_all, by = c("year", "var_orig"), relationship = "many-to-one")
+if (any(is.na(awareness_xwalk$qtext))) {
+  print(filter(awareness_xwalk, is.na(qtext)))
+  stop("Awareness variables missing from source metadata; see above.")
+}
+xwalk <- bind_rows(xwalk, awareness_xwalk)
 
 # Deduplicate: drop 2006-instrument carryforwards present in the 2007 file, and
 # the pre-Virginia (provisional) 2006 Senate-control item (keep post-Virginia).
@@ -255,7 +303,7 @@ coverage <- xwalk |>
 
 # Human-readable codebook (markdown) ----
 md <- c(
-  "# CCES Media Use & Political Knowledge — Cumulative Codebook (2006-2025)",
+  "# CCES Media Use, Political Knowledge & Awareness — Cumulative Codebook (2006-2025)",
   "",
   glue("Built by `02_codebook.R`. Source: `data/source/cces/YYYY_cc.dta`."),
   "",
@@ -263,6 +311,7 @@ md <- c(
   "",
   "- `mediause_long` — media-use battery (one row per respondent x year x item)",
   "- `knowledge_long` — political-knowledge battery (party control / party recall)",
+  "- awareness items — officeholder evaluation / ideological placement, appended to `knowledge_long`",
   "",
   "## Important harmonization notes",
   "",
@@ -275,6 +324,8 @@ md <- c(
   "  never on the raw integer, so `response` is comparable across years.",
   "- `value_raw` (original integer) and `label_raw` (original value label) are",
   "  retained in the long files for auditing.",
+  "- Awareness items distinguish substantive responses (`is_aware = TRUE`) from",
+  "  `Not sure` (`is_aware = FALSE`); they are never coded as correct or incorrect.",
   "",
   "## Items and year coverage",
   "",
