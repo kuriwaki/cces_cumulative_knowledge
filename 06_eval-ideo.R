@@ -1,0 +1,75 @@
+# Written by Codex
+# Add officeholder evaluation and ideological-placement awareness items for 2020
+# and 2024 to the scored political-knowledge release file.
+
+source("00_functions.R")
+library(arrow)
+
+# Inputs ----
+
+out_dir <- "data/output"
+if (any(!file_exists(c(
+  path(out_dir, "knowledge_long_2006-2025_scored_base.feather"),
+  path(out_dir, "mediaknowl_crosswalk.csv"),
+  path(out_dir, "mediaknowl_response_map.csv")
+)))) {
+  stop("Missing inputs. Run 02_codebook.R and 05_correct-answers.R before 06_eval-ideo.R.")
+}
+
+xwalk <- read_csv(path(out_dir, "mediaknowl_crosswalk.csv"), show_col_types = FALSE)
+response_map <- read_csv(
+  path(out_dir, "mediaknowl_response_map.csv"),
+  show_col_types = FALSE
+)
+awareness_xwalk <- filter(xwalk, group == "awareness")
+awareness_map <- filter(response_map, group == "awareness")
+awareness_items <- unique(awareness_xwalk$item)
+
+if (nrow(awareness_xwalk) != 12L ||
+    any(count(awareness_xwalk, year, item)$n != 1L)) {
+  stop("Expected exactly 12 unique awareness year-item mappings from 02_codebook.R.")
+}
+
+# Build ----
+
+newsint_4pt <- build_newsint_4pt(xwalk)
+awareness_long <- build_long(awareness_xwalk, awareness_map) |>
+  left_join(newsint_4pt, by = c("year", "case_id"), relationship = "many-to-one") |>
+  mutate(
+    is_aware = case_when(
+      response == "Not sure" ~ FALSE,
+      !is.na(response) ~ TRUE,
+      TRUE ~ NA
+    ),
+    correct_response = NA_character_,
+    correct_source = NA_character_,
+    is_correct = NA
+  ) |>
+  filter(!is.na(is_aware)) |>
+  relocate(newsint_4pt, .after = case_id)
+
+scored <- read_feather(path(out_dir, "knowledge_long_2006-2025_scored_base.feather")) |>
+  filter(!item %in% awareness_items) |>
+  mutate(is_aware = NA)
+
+scored_extended <- bind_rows(scored, awareness_long)
+
+set.seed(20250611)
+scored_extended_sample <- scored_extended |>
+  sample_mediaknowl_case_ids(target_rows = 10000) |>
+  prepare_mediaknowl_dta_sample()
+
+# Save ----
+
+dir_create("data/release")
+write_feather(scored_extended, path("data/release", "knowledge_long_2006-2025_scored.feather"))
+write_dta(scored_extended_sample,
+          path("data/release", "knowledge_long_2006-2025_scored_sample.dta"))
+
+cli_alert_success(
+  "Wrote final scored political-knowledge release file with {nrow(awareness_long)} awareness rows."
+)
+awareness_long |>
+  count(year, item, is_aware) |>
+  arrange(year, item, is_aware) |>
+  print(n = Inf)
