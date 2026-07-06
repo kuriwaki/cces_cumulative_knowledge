@@ -34,8 +34,8 @@ years. Two traps are handled explicitly:
 | `02_codebook.R` | Reads **metadata only** (0 rows) from all yearly common-content files, defines the media-use, political-knowledge, and awareness variable mappings, and writes the crosswalk, value-label inventory, response map, and a human-readable codebook. |
 | `03_media-use.R` | Builds the cumulative **media-use** long file. |
 | `04_political-knowledge.R` | Builds the cumulative **political-knowledge** long file. |
-| `05_correct-answers.R` | Adds correct answers and `is_correct` for federal control and officeholder party-recall items where a source key is available. |
-| `06_eval-ideo.R` | Appends officeholder **evaluation** and **ideological-placement** awareness items (own Senator 1/2, Governor) for 2020 and 2024 to the scored release file. `is_aware` distinguishes substantive responses from "Not sure"; `is_correct` remains missing. |
+| `05_correct-answers.R` | Adds correct answers and `is_correct` for federal control and officeholder party-recall items where a source key is available, writing the scored base file to `data/output`. |
+| `06_eval-ideo.R` | Adds officeholder **evaluation** and **ideological-placement** awareness items (own Senator 1/2, Governor) for 2020 and 2024 to the scored base file and writes the final scored release file. `is_aware` distinguishes substantive responses from "Not sure"; `is_correct` remains missing. |
 
 ```sh
 Rscript 01_download-cces-dataverse.R
@@ -65,7 +65,7 @@ diagnostics are written to `data/output/`.
   (blog/TV/newspaper/radio/social/none), TV-news & newspaper type, the network
   battery (ABC/CBS/NBC/CNN/Fox/MSNBC/PBS/Other, 2020+), and the social-media
   activity sub-battery, with `newsint_4pt` attached to every row. ~6.1M rows.
-- `knowledge_long_2006-2025_scored` — party **control** (U.S. House, U.S. Senate,
+- `knowledge_long_2006-2025_scored_base` — party **control** (U.S. House, U.S. Senate,
   state senate, state lower chamber) and party **recall** (own Governor, Senator
   1, Senator 2, House member as `recall_house`), with correct answers where available. ~5.5M rows,
   all 20 years, and `newsint_4pt` attached where available.
@@ -79,21 +79,25 @@ value_raw, label_raw, response`.
 
 **Correctness outputs** (from script 05):
 
-- `knowledge_long_2006-2025_scored.feather` — final political-knowledge dataset,
-  adding `correct_response`, `correct_source`, and `is_correct`
+- `knowledge_long_2006-2025_scored_base.feather` — scored political-knowledge
+  build file, adding `correct_response`, `correct_source`, and `is_correct`
 - `knowledge_correct_answer_key.csv` — answer-key rows used for scoring
 - `knowledge_correct_summary.csv` — item-level scored-row counts and mean
   correctness
 
 **Evaluation / ideology outputs** (from script 06):
 
-- Appends `eval_senator1`, `eval_senator2`, `eval_governor`, `ideo_senator1`,
-  `ideo_senator2`, `ideo_governor` for 2020 and 2024 directly into
-  `knowledge_long_2006-2025_scored.feather`. For these rows, `is_aware` is
+- `knowledge_long_2006-2025_scored.feather` — final political-knowledge release
+  dataset, with `eval_senator1`, `eval_senator2`, `eval_governor`,
+  `ideo_senator1`, `ideo_senator2`, and `ideo_governor` for 2020 and 2024 added
+  to the scored base file. For these rows, `is_aware` is
   `TRUE` for a substantive response and `FALSE` for "Not sure", while
   `is_correct` is `NA`. For all other rows, `is_aware` is `NA`. Skipped and
-  not-asked responses are omitted. The script is idempotent: re-running it
-  drops and rebuilds these six items rather than duplicating rows.
+  not-asked responses are omitted. The script is rerunnable because it reads the
+  scored base file from `data/output` and writes a distinct final file to
+  `data/release`.
+- `knowledge_long_2006-2025_scored_sample.dta` — 10,000-row random sample from
+  the final scored release file.
 
 ## Notes
 

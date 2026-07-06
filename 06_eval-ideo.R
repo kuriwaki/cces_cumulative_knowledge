@@ -1,6 +1,6 @@
-# Written by Claude Code and Codex
-# Append officeholder evaluation and ideological-placement awareness items for
-# 2020 and 2024 to the scored political-knowledge release file.
+# Written by Codex
+# Add officeholder evaluation and ideological-placement awareness items for 2020
+# and 2024 to the scored political-knowledge release file.
 
 source("00_functions.R")
 library(arrow)
@@ -8,14 +8,11 @@ library(arrow)
 # Inputs ----
 
 out_dir <- "data/output"
-release_dir <- "data/release"
-scored_path <- path(release_dir, "knowledge_long_2006-2025_scored.feather")
-required_inputs <- c(
-  scored_path,
+if (any(!file_exists(c(
+  path(out_dir, "knowledge_long_2006-2025_scored_base.feather"),
   path(out_dir, "mediaknowl_crosswalk.csv"),
   path(out_dir, "mediaknowl_response_map.csv")
-)
-if (any(!file_exists(required_inputs))) {
+)))) {
   stop("Missing inputs. Run 02_codebook.R and 05_correct-answers.R before 06_eval-ideo.R.")
 }
 
@@ -51,18 +48,26 @@ awareness_long <- build_long(awareness_xwalk, awareness_map) |>
   filter(!is.na(is_aware)) |>
   relocate(newsint_4pt, .after = case_id)
 
-scored <- read_feather(scored_path) |>
+scored <- read_feather(path(out_dir, "knowledge_long_2006-2025_scored_base.feather")) |>
   filter(!item %in% awareness_items) |>
   mutate(is_aware = NA)
 
 scored_extended <- bind_rows(scored, awareness_long)
 
+set.seed(20250611)
+scored_extended_sample <- scored_extended |>
+  sample_mediaknowl_case_ids(target_rows = 10000) |>
+  prepare_mediaknowl_dta_sample()
+
 # Save ----
 
-write_feather(scored_extended, scored_path)
+dir_create("data/release")
+write_feather(scored_extended, path("data/release", "knowledge_long_2006-2025_scored.feather"))
+write_dta(scored_extended_sample,
+          path("data/release", "knowledge_long_2006-2025_scored_sample.dta"))
 
 cli_alert_success(
-  "Appended {nrow(awareness_long)} awareness rows (2020 and 2024) to {.file {scored_path}}."
+  "Wrote final scored political-knowledge release file with {nrow(awareness_long)} awareness rows."
 )
 awareness_long |>
   count(year, item, is_aware) |>

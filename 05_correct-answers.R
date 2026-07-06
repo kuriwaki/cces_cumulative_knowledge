@@ -56,11 +56,8 @@ read_recall_key <- function(year, vars, src_dir = "data/source/cces") {
 # Inputs ----
 
 out_dir <- "data/output"
-release_dir <- "data/release"
 dir_create(out_dir)
-dir_create(release_dir)
-required_input <- path(out_dir, "knowledge_long_2006-2025.feather")
-if (!file_exists(required_input)) {
+if (!file_exists(path(out_dir, "knowledge_long_2006-2025.feather"))) {
   stop("Missing political-knowledge long file. Run 04_political-knowledge.R before 05_correct-answers.R.")
 }
 knowledge_long <- read_feather(path(out_dir, "knowledge_long_2006-2025.feather"))
@@ -248,19 +245,13 @@ summary_by_item <- knowledge_scored |>
   arrange(item)
 
 # Save ----
-set.seed(20250611)
-knowledge_scored_sample <- knowledge_scored |>
-  sample_mediaknowl_case_ids(target_rows = 10000) |>
-  prepare_mediaknowl_dta_sample()
 
 write_csv(answer_key, path(out_dir, "knowledge_correct_answer_key.csv"))
 write_csv(summary_by_item, path(out_dir, "knowledge_correct_summary.csv"))
-write_feather(knowledge_scored, path(release_dir, "knowledge_long_2006-2025_scored.feather"))
-write_dta(knowledge_scored_sample,
-          path(release_dir, "knowledge_long_2006-2025_scored_sample.dta"))
+write_feather(knowledge_scored, path(out_dir, "knowledge_long_2006-2025_scored_base.feather"))
 if (file_exists(path(out_dir, "knowledge_long_2006-2025.feather"))) {
   file_delete(path(out_dir, "knowledge_long_2006-2025.feather"))
 }
 
-cli_alert_success("Wrote scored political-knowledge release files to {.path {release_dir}}.")
+cli_alert_success("Wrote scored political-knowledge build files to {.path {out_dir}}.")
 print(summary_by_item, n = Inf)
