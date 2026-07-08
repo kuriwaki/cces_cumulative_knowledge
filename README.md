@@ -96,6 +96,20 @@ value_raw, label_raw, response`, plus battery-specific scoring columns where app
 
 - `knowledge_long_2006-2025.feather` — unscored political-knowledge long file (removed after script 05 runs)
 
+## Tests
+
+After building the placement release (`06_placement.R`), compare summary
+statistics to the Moskowitz (2021) replication benchmarks:
+
+```sh
+Rscript tests/run-tests.R
+```
+
+Benchmarks are hardcoded in `tests/fixtures/moskowitz_placement_benchmarks.csv`
+(from `cces_1216.dta`, Harvard Dataverse [10.7910/DVN/HDDPTB](https://doi.org/10.7910/DVN/HDDPTB)).
+Evaluation items and 2016 senator ideology must match exactly; 2012 senator
+ideology coalesce rows may differ by up to 0.3% of respondents.
+
 ## Notes
 
 - Media coverage starts in 2008 after moving `newsint` out of the item rows and
