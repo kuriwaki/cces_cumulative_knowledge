@@ -5,6 +5,7 @@
 # Senate-candidate item (dplyr >= 1.2.0).
 
 source("00_functions.R")
+script_banner("06_placement.R")
 library(arrow)
 
 if (packageVersion("dplyr") < "1.2.0") {

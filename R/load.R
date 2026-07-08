@@ -17,6 +17,7 @@
 
   helper_files <- c(
     "load-packages.R",
+    "script-header.R",
     "case-id.R",
     "haven.R",
     "sample-export.R",

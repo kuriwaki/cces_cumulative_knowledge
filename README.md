@@ -29,6 +29,9 @@ years. Two traps are handled explicitly:
 
 ## Scripts (run in order)
 
+Use `./run-pipeline.sh` for a shell wrapper that prints each script name before
+it runs, or call scripts individually (each prints a `cli` banner at startup).
+
 | script | what it does |
 |---|---|
 | `00_functions.R` | Sources `R/load.R` — shared helpers for build scripts 03–07. Also loaded automatically via `.Rprofile`. |
@@ -39,6 +42,12 @@ years. Two traps are handled explicitly:
 | `05_correct-answers.R` | Adds correct answers and `is_correct` for federal control and officeholder party-recall items where a source key is available, and writes the scored **knowledge** release to `data/release`. |
 | `06_placement.R` | Builds the **placement** long file (officeholder evaluation and ideological placement) for 2012, 2016, 2020, and 2024 and writes the placement release to `data/release`. `is_aware` distinguishes substantive responses from "Not sure" / "Never heard of person". Senator ideology in 2012/2016/2020 is coalesced per respondent from the current-senator item and, when that row was skipped, the matching Senate-candidate item (requires dplyr ≥ 1.2.0). |
 | `07_join-release.R` | Stacks the media, knowledge, and placement release files into `mediaknowl_long_2006-2025.feather` for users who want one combined long file. |
+
+```sh
+./run-pipeline.sh
+```
+
+Or step by step:
 
 ```sh
 Rscript 01_download-cces-dataverse.R

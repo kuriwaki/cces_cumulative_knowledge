@@ -15,13 +15,16 @@
 # Republicans = 1 in 2008 and 2010+). Harmonization is therefore done on the
 # value-label TEXT, never on the raw integer code.
 
-library(tidyverse)
-library(haven)
-library(glue)
-library(fs)
-library(cli)
+suppressPackageStartupMessages({
+  library(tidyverse)
+  library(haven)
+  library(glue)
+  library(fs)
+  library(cli)
+})
 
-# Helpers ----
+source("R/script-header.R")
+script_banner("02_codebook.R")
 
 #' Read variable + value label metadata from a single .dta (0 rows)
 read_meta <- function(path) {

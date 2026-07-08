@@ -4,6 +4,7 @@
 # run after 03, 05, and 06_placement.R.
 
 source("00_functions.R")
+script_banner("07_join-release.R")
 library(arrow)
 
 # Config ----

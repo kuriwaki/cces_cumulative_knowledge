@@ -11,6 +11,7 @@
 # value-label text. `value_raw` keeps the original code for auditing.
 
 source("00_functions.R")
+script_banner("04_political-knowledge.R")
 library(arrow)
 
 # Config ----

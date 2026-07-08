@@ -5,15 +5,8 @@
 # party fields in the CCES source files. State legislative control is left
 # missing because the source CCES files do not include a state chamber majority-party key.
 
-library(tidyverse)
-library(haven)
-library(glue)
-library(fs)
-library(cli)
-library(arrow)
-library(bit64)
-
 source("00_functions.R")
+script_banner("05_correct-answers.R")
 
 # Config ----
 
