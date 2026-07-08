@@ -175,6 +175,18 @@ item_meta <- tribble(
 
 awareness_vars <- tribble(
   ~year, ~group,      ~item,            ~var_orig,
+  2012L, "awareness", "eval_senator1",  "CC315b",
+  2012L, "awareness", "eval_senator2",  "CC315c",
+  2012L, "awareness", "eval_governor",  "CC308d",
+  2012L, "awareness", "ideo_senator1",  "CC334H",
+  2012L, "awareness", "ideo_senator2",  "CC334I",
+  2012L, "awareness", "ideo_governor",  "CC334B",
+  2016L, "awareness", "eval_senator1",  "CC16_320g",
+  2016L, "awareness", "eval_senator2",  "CC16_320h",
+  2016L, "awareness", "eval_governor",  "CC16_320d",
+  2016L, "awareness", "ideo_senator1",  "CC16_340j",
+  2016L, "awareness", "ideo_senator2",  "CC16_340k",
+  2016L, "awareness", "ideo_governor",  "CC16_340b",
   2020L, "awareness", "eval_senator1",  "CC20_320g",
   2020L, "awareness", "eval_senator2",  "CC20_320h",
   2020L, "awareness", "eval_governor",  "CC20_320d",
@@ -222,6 +234,11 @@ normalize_response <- function(group, label_raw) {
     lab == "somewhat approve"          ~ "Somewhat approve",
     lab == "somewhat disapprove"       ~ "Somewhat disapprove",
     lab == "strongly disapprove"       ~ "Strongly disapprove",
+    # 2012 senator approval battery (CC315b/c) uses a 4-pt scale without
+    # "Somewhat", plus a "Never Heard" category
+    lab == "approve"                   ~ "Approve",
+    lab == "disapprove"                ~ "Disapprove",
+    str_detect(lab, "never heard")     ~ "Never heard of person",
     lab == "very liberal"              ~ "Very Liberal",
     lab == "liberal"                   ~ "Liberal",
     lab == "somewhat liberal"          ~ "Somewhat Liberal",

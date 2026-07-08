@@ -35,7 +35,7 @@ years. Two traps are handled explicitly:
 | `03_media-use.R` | Builds the cumulative **media-use** long file. |
 | `04_political-knowledge.R` | Builds the cumulative **political-knowledge** long file. |
 | `05_correct-answers.R` | Adds correct answers and `is_correct` for federal control and officeholder party-recall items where a source key is available, writing the scored base file to `data/output`. |
-| `06_eval-ideo.R` | Adds officeholder **evaluation** and **ideological-placement** awareness items (own Senator 1/2, Governor) for 2020 and 2024 to the scored base file and writes the final scored release file. `is_aware` distinguishes substantive responses from "Not sure"; `is_correct` remains missing. |
+| `06_eval-ideo.R` | Adds officeholder **evaluation** and **ideological-placement** awareness items (own Senator 1/2, Governor) for 2012, 2016, 2020, and 2024 to the scored base file and writes the final scored release file. `is_aware` distinguishes substantive responses from "Not sure" / "Never heard of person"; `is_correct` remains missing. Senator placements for senators on the ballot (not asked in the current-senator item in 2012/2016/2020) are recovered from the matching Senate-candidate item. |
 
 ```sh
 Rscript 01_download-cces-dataverse.R
@@ -89,11 +89,20 @@ value_raw, label_raw, response`.
 
 - `knowledge_long_2006-2025_scored.feather` — final political-knowledge release
   dataset, with `eval_senator1`, `eval_senator2`, `eval_governor`,
-  `ideo_senator1`, `ideo_senator2`, and `ideo_governor` for 2020 and 2024 added
-  to the scored base file. For these rows, `is_aware` is
-  `TRUE` for a substantive response and `FALSE` for "Not sure", while
+  `ideo_senator1`, `ideo_senator2`, and `ideo_governor` for 2012, 2016, 2020,
+  and 2024 added to the scored base file. For these rows, `is_aware` is
+  `TRUE` for a substantive response and `FALSE` for "Not sure" or "Never heard
+  of person" (the latter appears only in the 2012 senator approval battery,
+  which also uses a 4-pt Approve/Disapprove scale without "Somewhat"), while
   `is_correct` is `NA`. For all other rows, `is_aware` is `NA`. Skipped and
-  not-asked responses are omitted. The script is rerunnable because it reads the
+  not-asked responses are omitted. In 2012, 2016, and 2020 the CCES does not ask
+  the current-senator ideology item about a senator who is on the ballot; those
+  placements are recovered from the corresponding Senate-candidate ideology
+  item (matched by party in 2012, by sample-frame name in 2016/2020), with
+  `var_orig`/`qtext` recording the candidate item actually used. This matches
+  the senator-ideology coding in the Moskowitz (2021, APSR) replication data to
+  within 0.1% of respondents, with identical `is_aware` values where both are
+  scored. The script is rerunnable because it reads the
   scored base file from `data/output` and writes a distinct final file to
   `data/release`.
 - `knowledge_long_2006-2025_scored_sample.dta` — 10,000-row random sample from
