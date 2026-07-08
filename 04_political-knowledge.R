@@ -13,29 +13,39 @@
 source("00_functions.R")
 library(arrow)
 
+# Config ----
+
+out_dir = "data/output"
+
 # Inputs ----
-out_dir      <- "data/output"
+
 dir_create(out_dir)
 required_inputs <- path(out_dir, c("mediaknowl_crosswalk.csv", "mediaknowl_response_map.csv"))
 if (any(!file_exists(required_inputs))) {
   stop("Missing codebook outputs. Run 02_codebook.R before 04_political-knowledge.R.")
 }
-xwalk        <- read_csv(path(out_dir, "mediaknowl_crosswalk.csv"), show_col_types = FALSE)
+
+xwalk <- read_csv(path(out_dir, "mediaknowl_crosswalk.csv"), show_col_types = FALSE)
 response_map <- read_csv(path(out_dir, "mediaknowl_response_map.csv"), show_col_types = FALSE)
 
 know_xwalk <- filter(xwalk, group == "knowledge")
-know_map   <- filter(response_map, group == "knowledge")
+know_map <- filter(response_map, group == "knowledge")
 
 # Build ----
+
 cli_alert_info("Building political-knowledge long file over {n_distinct(know_xwalk$year)} years.")
-knowledge_long <- build_long(know_xwalk, know_map)
-newsint_4pt <- build_newsint_4pt(xwalk)
+knowledge_long <- build_long(
+  xwalk = know_xwalk,
+  response_map = know_map
+)
+newsint_4pt <- build_newsint_4pt(xwalk = xwalk)
 
 knowledge_long <- knowledge_long |>
   left_join(newsint_4pt, by = c("year", "case_id"), relationship = "many-to-one") |>
   relocate(newsint_4pt, .after = case_id)
 
 # Report ----
+
 cli_alert_success("knowledge long: {nrow(knowledge_long)} rows, {n_distinct(knowledge_long$case_id)} respondents.")
 cli_h2("Rows per item")
 knowledge_long |> count(item, item_label) |> arrange(item) |> print(n = Inf)
@@ -51,6 +61,7 @@ knowledge_long |>
   print(n = Inf)
 
 # Save ----
+
 write_feather(knowledge_long, path(out_dir, "knowledge_long_2006-2025.feather"))
 
 cli_alert_success("Wrote political-knowledge long file to {.path {out_dir}}.")
