@@ -200,6 +200,9 @@ awareness_vars <- tribble(
   2024L, "awareness", "ideo_senator2",  "CC24_330j",
   2024L, "awareness", "ideo_governor",  "CC24_330b"
 )
+# Senator ideology in 2012/2016/2020: current-senator vars above are the primary
+# source; when a senator is on the ballot, CCES stores the placement under the
+# Senate-candidate item instead. See ideo_coalesce_match_cfg in 06_placement.R.
 
 # Harmonize a raw value-label string into a canonical response category ----
 normalize_response <- function(group, label_raw) {
@@ -324,11 +327,13 @@ md <- c(
   "",
   glue("Built by `02_codebook.R`. Source: `data/source/cces/YYYY_cc.dta`."),
   "",
-  "Two long-form cumulative datasets are derived from this crosswalk:",
+  "Two long-form cumulative datasets are derived from this crosswalk, plus a",
+  "separate placement release (script 06) and an optional stacked file (script 07):",
   "",
   "- `mediause_long` — media-use battery (one row per respondent x year x item)",
   "- `knowledge_long` — political-knowledge battery (party control / party recall)",
-  "- awareness items — officeholder evaluation / ideological placement, appended to `knowledge_long`",
+  "- `placement_long` — officeholder evaluation / ideological placement (2012, 2016, 2020, 2024)",
+  "- `mediaknowl_long` — stacked media + knowledge + placement (script 07)",
   "",
   "## Important harmonization notes",
   "",
