@@ -1,0 +1,15 @@
+year,item,mosk_var,n_scored,n_aware,pct_aware
+2012,eval_senator1,sen1_eval,53946,47034,0.872
+2012,eval_senator2,sen2_eval,53919,45751,0.848
+2012,eval_governor,gov_eval,54347,50566,0.930
+2012,ideo_senator1,sen1_ideo,53862,42053,0.781
+2012,ideo_senator2,sen2_ideo,53852,41200,0.765
+2012,ideo_governor,gov_ideo,53824,44120,0.820
+2012,sen_both_ideo,sen_both_ideo,53702,39583,0.737
+2016,eval_senator1,sen1_eval,64377,47218,0.734
+2016,eval_senator2,sen2_eval,64385,47172,0.733
+2016,eval_governor,gov_eval,64381,56341,0.875
+2016,ideo_senator1,sen1_ideo,63759,45915,0.720
+2016,ideo_senator2,sen2_ideo,63641,46077,0.724
+2016,ideo_governor,gov_ideo,63959,50482,0.789
+2016,sen_both_ideo,sen_both_ideo,63202,41986,0.664

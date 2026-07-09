@@ -1,15 +1,18 @@
 # Written by Codex
 
-library(ccesMRPprep)
+suppressPackageStartupMessages({
+  library(ccesMRPprep)
+  library(haven)
+  library(glue)
+  library(fs)
+  library(cli)
+  library(dataverse)
+  library(tidyverse)
+})
 stopifnot(packageVersion("ccesMRPprep") >= "0.1.16")
-library(haven)
-library(glue)
-library(fs)
-library(cli)
-library(dataverse)
-library(tidyverse)
 
-# Setup ----
+source("R/script-header.R")
+script_banner("01_download-cces-dataverse.R")
 
 if (!nzchar(Sys.getenv("DATAVERSE_SERVER"))) {
   Sys.setenv(DATAVERSE_SERVER = "dataverse.harvard.edu")

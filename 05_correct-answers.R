@@ -1,68 +1,19 @@
 # Written by Codex
-# Add correct-answer metadata to the cumulative political-knowledge long file.
-# Federal chamber control is keyed by survey year. Officeholder recall is keyed
-# to respondent-specific current-officeholder party fields in the CCES source
-# files. State legislative control is left missing because the source CCES files
-# do not include a state chamber majority-party key.
-
-library(tidyverse)
-library(haven)
-library(glue)
-library(fs)
-library(cli)
-library(arrow)
-library(bit64)
+# Add correct-answer metadata to the cumulative political-knowledge long file and
+# write the scored knowledge release. Federal chamber control is keyed by survey
+# year. Officeholder recall is keyed to respondent-specific current-officeholder
+# party fields in the CCES source files. State legislative control is left
+# missing because the source CCES files do not include a state chamber majority-party key.
 
 source("00_functions.R")
+script_banner("05_correct-answers.R")
 
-# Helpers ----
+# Config ----
 
-normalize_party <- function(x) {
-  lab <- str_squish(str_to_lower(replace_na(as.character(x), "")))
+out_dir = "data/output"
+release_dir = "data/release"
 
-  case_when(
-    lab == "" ~ NA_character_,
-    lab %in% c("democrat", "democratic", "democratic-farmer-labor") ~ "Democratic",
-    lab %in% c("republican", "republicans") ~ "Republican",
-    lab %in% c("independent", "other", "other party", "other party/independent",
-               "other party / independent") ~ "Other/Independent",
-    TRUE ~ NA_character_
-  )
-}
-
-read_recall_key <- function(year, vars, src_dir = "data/source/cces") {
-  fp <- path(src_dir, glue("{year}_cc.dta"))
-  needed <- c("case_id", unname(vars))
-  present <- intersect(needed, names(read_dta(fp, n_max = 0)))
-
-  if (!"case_id" %in% present || length(setdiff(present, "case_id")) == 0) {
-    return(tibble())
-  }
-
-  d <- read_dta(fp, col_select = all_of(present)) |>
-    transmute(case_id = fmt_case_id(case_id),
-              across(-case_id, ~ normalize_party(as_factor(.x)))) |>
-    pivot_longer(-case_id, names_to = "var_correct", values_to = "correct_response")
-
-  tibble(item = names(vars), var_correct = unname(vars)) |>
-    inner_join(d, by = "var_correct", relationship = "one-to-many") |>
-    mutate(
-      year = year,
-      correct_source = glue("{year}_cc.dta:{var_correct}")
-    ) |>
-    select(year, case_id, item, correct_response, correct_source)
-}
-
-# Inputs ----
-
-out_dir <- "data/output"
-dir_create(out_dir)
-if (!file_exists(path(out_dir, "knowledge_long_2006-2025.feather"))) {
-  stop("Missing political-knowledge long file. Run 04_political-knowledge.R before 05_correct-answers.R.")
-}
-knowledge_long <- read_feather(path(out_dir, "knowledge_long_2006-2025.feather"))
-
-recall_var_map <- list(
+recall_var_map = list(
   `2006` = c(
     recall_governor = "v5020",
     recall_house = "v5014",
@@ -174,7 +125,7 @@ recall_var_map <- list(
   )
 )
 
-federal_control_key <- tribble(
+federal_control_key = tribble(
   ~year, ~control_house, ~control_senate,
   2006L, "Democratic",  "Democratic",
   2007L, "Democratic",  "Democratic",
@@ -203,10 +154,60 @@ federal_control_key <- tribble(
     correct_source = "year-level congressional control key"
   )
 
+# Helpers ----
+
+normalize_party <- function(x) {
+  lab <- str_squish(str_to_lower(replace_na(as.character(x), "")))
+
+  case_when(
+    lab == "" ~ NA_character_,
+    lab %in% c("democrat", "democratic", "democratic-farmer-labor") ~ "Democratic",
+    lab %in% c("republican", "republicans") ~ "Republican",
+    lab %in% c("independent", "other", "other party", "other party/independent",
+               "other party / independent") ~ "Other/Independent",
+    TRUE ~ NA_character_
+  )
+}
+
+read_recall_key <- function(year, vars, src_dir = "data/source/cces") {
+  fp <- path(src_dir, glue("{year}_cc.dta"))
+  needed <- c("case_id", unname(vars))
+  present <- intersect(needed, names(read_dta(fp, n_max = 0)))
+
+  if (!"case_id" %in% present || length(setdiff(present, "case_id")) == 0) {
+    return(tibble())
+  }
+
+  d <- read_dta(fp, col_select = all_of(present)) |>
+    transmute(case_id = fmt_case_id(case_id),
+              across(-case_id, ~ normalize_party(as_factor(.x)))) |>
+    pivot_longer(-case_id, names_to = "var_correct", values_to = "correct_response")
+
+  tibble(item = names(vars), var_correct = unname(vars)) |>
+    inner_join(d, by = "var_correct", relationship = "one-to-many") |>
+    mutate(
+      year = year,
+      correct_source = glue("{year}_cc.dta:{var_correct}")
+    ) |>
+    select(year, case_id, item, correct_response, correct_source)
+}
+
+# Inputs ----
+
+dir_create(out_dir)
+dir_create(release_dir)
+if (!file_exists(path(out_dir, "knowledge_long_2006-2025.feather"))) {
+  stop("Missing political-knowledge long file. Run 04_political-knowledge.R before 05_correct-answers.R.")
+}
+knowledge_long <- read_feather(path(out_dir, "knowledge_long_2006-2025.feather"))
+
 # Build ----
 
 cli_alert_info("Building respondent-level recall answer key.")
-recall_key <- imap(recall_var_map, ~ read_recall_key(as.integer(.y), .x)) |>
+recall_key <- imap(
+  recall_var_map,
+  ~ read_recall_key(year = as.integer(.y), vars = .x)
+) |>
   list_rbind() |>
   filter(!is.na(correct_response))
 
@@ -248,10 +249,28 @@ summary_by_item <- knowledge_scored |>
 
 write_csv(answer_key, path(out_dir, "knowledge_correct_answer_key.csv"))
 write_csv(summary_by_item, path(out_dir, "knowledge_correct_summary.csv"))
-write_feather(knowledge_scored, path(out_dir, "knowledge_long_2006-2025_scored_base.feather"))
+
+set.seed(20250611)
+knowledge_scored_sample <- sample_mediaknowl_case_ids(
+  data = knowledge_scored,
+  target_rows = 10000
+) |>
+  prepare_mediaknowl_dta_sample()
+
+write_feather(
+  knowledge_scored,
+  path(release_dir, "knowledge_long_2006-2025_scored.feather")
+)
+write_dta(
+  knowledge_scored_sample,
+  path(release_dir, "knowledge_long_2006-2025_scored_sample.dta")
+)
+
 if (file_exists(path(out_dir, "knowledge_long_2006-2025.feather"))) {
   file_delete(path(out_dir, "knowledge_long_2006-2025.feather"))
 }
 
-cli_alert_success("Wrote scored political-knowledge build files to {.path {out_dir}}.")
+cli_alert_success(
+  "Wrote scored political-knowledge release files to {.path {release_dir}}."
+)
 print(summary_by_item, n = Inf)
